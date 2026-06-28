@@ -10,3 +10,5 @@ Route::get('/watchlist', [StockDashboardController::class, 'index']);
 Route::get('/stock-summary', [StockDashboardController::class, 'summary']);
 Route::get('/stock-news', [StockDashboardController::class, 'news']);
 Route::get('/economic-calendar', [StockDashboardController::class, 'economicCalendar']);
+Route::get('/stock-chart', [StockDashboardController::class, 'chart']);
+Route::post('/chatbot', [StockDashboardController::class, 'chatbot']);

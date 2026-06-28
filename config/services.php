@@ -40,4 +40,14 @@ return [
         'base_url' => 'https://finnhub.io/api/v1',
     ],
 
+    'alpha_vantage' => [
+        'key' => env('ALPHA_VANTAGE_API_KEY'),
+        'base_url' => 'https://www.alphavantage.co/query',
+    ],
+
+    'gemini' => [
+        'key' => env('GEMINI_API_KEY'),
+        'base_url' => 'https://generativelanguage.googleapis.com/v1beta',
+    ],
+
 ];

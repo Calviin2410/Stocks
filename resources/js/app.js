@@ -1,10 +1,12 @@
 import './bootstrap';
+import Chart from 'chart.js/auto';
 
         let selectedCategory = 'all';
         let searchText = '';
         let sortOrder = 'latest';
         let showingWatchlist = window.location.pathname === '/watchlist';
         let currentPage = 1;
+        let stockChart = null;
         const itemsPerPage = 9;
 
         let watchlist = JSON.parse(localStorage.getItem('watchlist')) || [];
@@ -24,6 +26,14 @@ import './bootstrap';
         const modalDescription = document.getElementById('modalDescription');
         const modalCloseBtn = document.getElementById('modalCloseBtn');
         const modalReadBtn = document.getElementById('modalReadBtn');
+        const chartSymbol = document.getElementById('chartSymbol');
+        const chartMessage = document.getElementById('chartMessage');
+        const chatbotMessages = document.getElementById('chatbotMessages');
+        const chatbotInput = document.getElementById('chatbotInput');
+        const chatbotSendBtn = document.getElementById('chatbotSendBtn');
+        const chatbotBox = document.getElementById('chatbotBox');
+        const chatbotCloseBtn = document.getElementById('chatbotCloseBtn');
+        const chatbotOpenBtn = document.getElementById('chatbotOpenBtn');
 
         function escapeHtml(value) {
             return String(value ?? '').replace(/[&<>"']/g, function (char) {
@@ -150,6 +160,89 @@ import './bootstrap';
             return watchlist.some(item => item.title === article.title);
         }
 
+        function addChatMessage(message, type) {
+            if (!chatbotMessages) {
+                return;
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type === 'user' ? 'user-message' : 'bot-message';
+            messageDiv.textContent = message;
+
+            chatbotMessages.appendChild(messageDiv);
+            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+        }
+
+        async function sendChatbotMessage() {
+            if (!chatbotInput || !chatbotMessages) {
+                return;
+            }
+
+            const message = chatbotInput.value.trim();
+
+            if (!message) {
+                return;
+            }
+
+            addChatMessage(message, 'user');
+            chatbotInput.value = '';
+
+            addChatMessage('Thinking...', 'bot');
+
+            try {
+                const csrfToken = document
+                    .querySelector('meta[name="csrf-token"]')
+                    .getAttribute('content');
+
+                const response = await fetch('/chatbot', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                    body: JSON.stringify({
+                        message,
+                    }),
+                });
+
+                const result = await response.json();
+
+                chatbotMessages.lastChild.remove();
+
+                if (!result.success) {
+                    addChatMessage(result.message || 'Failed to get reply.', 'bot');
+                    return;
+                }
+
+                addChatMessage(result.reply, 'bot');
+            } catch (error) {
+                chatbotMessages.lastChild.remove();
+                addChatMessage('Something went wrong.', 'bot');
+            }
+        }
+
+        if (chatbotSendBtn && chatbotInput) {
+            chatbotSendBtn.addEventListener('click', sendChatbotMessage);
+
+            chatbotInput.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    sendChatbotMessage();
+                }
+            });
+        }
+
+        if (chatbotCloseBtn && chatbotBox && chatbotOpenBtn) {
+            chatbotCloseBtn.addEventListener('click', function () {
+                chatbotBox.classList.add('hide');
+                chatbotOpenBtn.classList.add('show');
+            });
+
+            chatbotOpenBtn.addEventListener('click', function () {
+                chatbotBox.classList.remove('hide');
+                chatbotOpenBtn.classList.remove('show');
+            });
+        }
+
         window.addEventListener('popstate', function () {
             showingWatchlist = window.location.pathname === '/watchlist';
             loadNews();
@@ -271,6 +364,61 @@ import './bootstrap';
             }
         }
 
+        async function loadChart(symbol = 'NVDA') {
+            const chartCanvas = document.getElementById('stockChart');
+
+            if (!chartCanvas || !chartMessage) {
+                return;
+            }
+
+            chartMessage.innerHTML = '';
+
+            try {
+                const response = await fetch(`/stock-chart?symbol=${symbol}`);
+                const result = await response.json();
+
+                if (!result.success || !Array.isArray(result.data) || result.data.length === 0) {
+                    if (stockChart) {
+                        stockChart.destroy();
+                        stockChart = null;
+                    }
+
+                    chartMessage.innerHTML = result.message || 'No chart data available.';
+                    return;
+                }
+
+                const labels = result.data.map(item => item.date);
+                const prices = result.data.map(item => item.close);
+
+                const ctx = chartCanvas.getContext('2d');
+
+                if (stockChart) {
+                    stockChart.destroy();
+                }
+
+                stockChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: `${symbol} Closing Price`,
+                                data: prices,
+                                tension: 0.3,
+                            },
+                        ],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                    },
+                });
+            } catch (error) {
+                chartMessage.innerHTML = 'Failed to load stock chart.';
+                console.error('Chart loading failed:', error);
+            }
+        }
+
         async function loadNews() {
             newsContainer.innerHTML = `
                 <div class="loading">
@@ -370,6 +518,12 @@ import './bootstrap';
             });
         });
 
+        if (chartSymbol) {
+            chartSymbol.addEventListener('change', function () {
+                loadChart(this.value);
+            });
+        }
+
         let searchTimer = null;
 
         searchInput.addEventListener('input', function () {
@@ -418,6 +572,9 @@ import './bootstrap';
 
         loadSummary();
         loadEconomicCalendar();
+        if (chartSymbol) {
+            loadChart(chartSymbol.value || 'NVDA');
+        }
         loadNews();
 
         setInterval(() => {
