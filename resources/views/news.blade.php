@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Stock News Dashboard</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Stock News</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-
 <body>
     <div class="navbar">
         <a href="/dashboard" class="navbar-title">
@@ -20,42 +19,9 @@
     </div>
 
     <div class="container">
-        <div class="header">
-            <h1>Stock News Dashboard</h1>
-            <p>Track stock market updates and latest financial news.</p>
-        </div>
-
-        <div id="summary" class="summary-grid"></div>
-
-        <div class="calendar-section">
-            <div class="calendar-header">
-                <div>
-                    <h2>Economic Calendar</h2>
-                    <p>Upcoming economic events from Forex Factory</p>
-                </div>
-            </div>
-
-            <div id="economicCalendar" class="calendar-box">
-                Loading economic calendar...
-            </div>
-        </div>
-
-        <div class="chart-section">
-            <div class="chart-header">
-                <h2>Stock Price Trend</h2>
-
-                <select id="chartSymbol" class="chart-select">
-                    <option value="NVDA">Nvidia</option>
-                    <option value="AAPL">Apple</option>
-                    <option value="TSLA">Tesla</option>
-                    <option value="SPY">S&P 500 ETF</option>
-                </select>
-            </div>
-
-            <div class="chart-box">
-                <canvas id="stockChart"></canvas>
-                <div id="chartMessage" class="chart-message"></div>
-            </div>
+        <div class="news-page-header" style="display: block;">
+            <h1>Latest Stock News</h1>
+            <p>Search, filter and save the latest market news.</p>
         </div>
 
         <div class="toolbar">
@@ -70,7 +36,7 @@
             <div class="toolbar-right">
                 <input
                     id="searchInput"
-                    class="search-input"
+                    class="search-input news-search-input"
                     type="text"
                     placeholder="Search stock news..."
                 >
@@ -116,24 +82,24 @@
             <button id="chatbotCloseBtn" class="chatbot-close-btn">×</button>
         </div>
 
-    <div id="chatbotMessages" class="chatbot-messages">
-        <div class="bot-message">
-            Hi, ask me about the latest stock news.
+        <div id="chatbotMessages" class="chatbot-messages">
+            <div class="bot-message">
+                Hi, ask me about the latest stock news.
+            </div>
+        </div>
+
+        <div class="chatbot-input-row">
+            <input
+                id="chatbotInput"
+                class="chatbot-input"
+                type="text"
+                placeholder="Ask about Nvidia, Apple, Tesla..."
+            >
+
+            <button id="chatbotSendBtn" class="chatbot-send-btn">
+                Send
+            </button>
         </div>
     </div>
-
-    <div class="chatbot-input-row">
-        <input
-            id="chatbotInput"
-            class="chatbot-input"
-            type="text"
-            placeholder="Ask about Nvidia, Apple, Tesla..."
-        >
-
-        <button id="chatbotSendBtn" class="chatbot-send-btn">
-            Send
-        </button>
-    </div>
-</div>
 </body>
 </html>

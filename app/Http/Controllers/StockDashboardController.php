@@ -14,6 +14,16 @@ class StockDashboardController extends Controller
         return view('dashboard');
     }
 
+    public function watchlistPage()
+    {
+        return view('watchlist');
+    }
+
+    public function newsPage()
+    {
+        return view('news');
+    }
+
     public function summary(): JsonResponse
     {
         try {

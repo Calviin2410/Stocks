@@ -690,3 +690,66 @@
         .chatbot-box.hide {
             display: none;
         }
+
+        .news-search-input {
+            width: 100%;
+            height: 56px;
+            font-size: 18px;
+            padding: 14px 18px;
+        }
+
+        .news-page-header {
+            margin-bottom: 24px;
+        }
+
+        .news-page-header h1 {
+            margin-bottom: 8px;
+            font-size: 34px;
+        }
+
+        .news-page-header p {
+            color: #6b7280;
+            font-size: 16px;
+        }
+
+        .navbar-links a {
+            color: #d1d5db;
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .navbar-links a:hover {
+            color: white;
+        }
+
+        .navbar-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+        }
+
+        .navbar-title:hover {
+            color: #d1d5db;
+        }
+
+        .watchlist-toolbar {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 140px;
+            gap: 12px;
+        }
+
+        .news-search-input {
+            width: 100%;
+            height: 56px;
+            font-size: 18px;
+            padding: 14px 18px;
+        }
+
+        @media (max-width: 768px) {
+            .watchlist-toolbar {
+                grid-template-columns: 1fr;
+            }
+        }

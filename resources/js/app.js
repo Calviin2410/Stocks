@@ -262,6 +262,10 @@ import Chart from 'chart.js/auto';
             }
         });
         async function loadSummary() {
+             if (!economicCalendarContainer) {
+                return;
+            }
+
             try {
                 const response = await fetch('/stock-summary');
                 const result = await response.json();
@@ -288,6 +292,10 @@ import Chart from 'chart.js/auto';
             }
         }
         async function loadEconomicCalendar() {
+            if (!economicCalendarContainer) {
+                return;
+            }
+
             economicCalendarContainer.innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
@@ -455,6 +463,14 @@ import Chart from 'chart.js/auto';
                     articles = result.data;
                 }
 
+                if (searchText !== '') {
+                    articles = articles.filter(article => {
+                        return article.title.toLowerCase().includes(searchText.toLowerCase())
+                            || article.source_name.toLowerCase().includes(searchText.toLowerCase())
+                            || article.category.toLowerCase().includes(searchText.toLowerCase())
+                            || (article.description || '').toLowerCase().includes(searchText.toLowerCase());
+                    });
+                }
                 articles = sortArticles(articles);
 
                 if (articles.length === 0) {
@@ -570,15 +586,26 @@ import Chart from 'chart.js/auto';
             loadNews();
         });
 
-        loadSummary();
-        loadEconomicCalendar();
+        if (summaryContainer) {
+            loadSummary();
+        }
+
+        if (economicCalendarContainer) {
+            loadEconomicCalendar();
+        }
+
         if (chartSymbol) {
             loadChart(chartSymbol.value || 'NVDA');
         }
-        loadNews();
 
-        setInterval(() => {
-            loadSummary();
+        if (newsContainer) {
+            loadNews();
+        }
+
+       setInterval(() => {
+            if (summaryContainer) {
+                loadSummary();
+            }
         }, 60000);
 
         window.showMarket = showMarket;
