@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Auth;
 
 class StockDashboardController extends Controller
 {
@@ -22,6 +23,11 @@ class StockDashboardController extends Controller
     public function newsPage()
     {
         return view('news');
+    }
+
+    public function mbtiPage()
+    {
+        return view('mbti');
     }
 
     public function summary(): JsonResponse
@@ -325,6 +331,10 @@ class StockDashboardController extends Controller
         try {
             $question = trim($request->input('message', ''));
 
+            $user = Auth::user();
+            $mbtiType = $user?->profile?->mbti_type;
+            $mbtiAdviceStyle = $this->getMbtiAdviceStyle($mbtiType);
+
             if ($question === '') {
                 return response()->json([
                     'success' => false,
@@ -357,10 +367,29 @@ class StockDashboardController extends Controller
     Rules:
     - Answer in simple English.
     - You may use the dashboard news context and Google Search when needed.
-    - Do not tell the user to buy, sell, or hold any stock.
-    - Do not provide financial advice.
-    - If the answer depends on recent information, use Google Search grounding.
+    - You may provide news-based analysis, sentiment, risks, and possible market impact.
+    - You may give a simple educational signal: Buy, Hold, Wait, Avoid, or Sell.
+    - Use Buy when the news sentiment looks clearly positive.
+    - Use Hold when the news sentiment is mixed or uncertain.
+    - Use Wait when there is not enough clear positive signal yet.
+    - Use Avoid when the stock looks too risky to enter based on the news.
+    - Use Sell when the news sentiment looks clearly negative or there are strong downside risks.
+    - Do not say 'you must buy' or 'you must sell'.
     - Keep the answer short and clear.
+    User MBTI profile:
+    - MBTI Type: " . ($mbtiType ?? 'Unknown') . "
+    - Advice style: {$mbtiAdviceStyle}
+
+    When answering, personalize the explanation based on the user's MBTI type.
+    Do not make investment decisions only based on MBTI.
+    Use MBTI only to adjust the advice style, risk reminder, and explanation tone.
+
+    Answer format:
+    Signal: Buy / Hold / Wait / Avoid / Sell
+    Reason: One to three simple sentences.
+    Risk: One short risk.
+    MBTI Tip: One short sentence based on the user's MBTI type.
+    Note: Investment involves risk. Please make your own decision carefully.
 
     Dashboard stock news context:
     {$newsContext}
@@ -423,5 +452,143 @@ class StockDashboardController extends Controller
                 'message' => $e->getMessage(),
             ]);
         }
+    }
+
+    public function createDevilAiTest()
+    {
+        try {
+            $response = Http::connectTimeout(5)
+                ->timeout(15)
+                ->acceptJson()
+                ->get(rtrim(config('services.devil_ai.base_url'), '/') . '/new_test', [
+                    'api_key' => trim(config('services.devil_ai.key')),
+                    'return_url' => url('/mbti'),
+                    'company_name' => 'Stock Dashboard',
+                    'completed_message' => 'Your MBTI test is completed. Please return to the dashboard to check your result.',
+                    'ask_gender' => '0',
+                    'ask_age' => '0',
+                    'lang' => 'en',
+                ]);
+
+            $data = $response->json();
+            $meta = $data['meta'] ?? [];
+
+            if (!$response->successful() || ($meta['success'] ?? false) !== true) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $meta['message'] ?? 'Failed to create MBTI test.',
+                    'debug' => $data,
+                ], 500);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $data['data'] ?? $data,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Devil.ai API connection error.',
+                'debug' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function checkDevilAiTest(Request $request)
+    {
+        $validated = $request->validate([
+            'test_id' => ['required', 'string'],
+        ]);
+
+        try {
+            $response = Http::connectTimeout(5)
+                ->timeout(15)
+                ->acceptJson()
+                ->get(rtrim(config('services.devil_ai.base_url'), '/') . '/check_test', [
+                    'api_key' => trim(config('services.devil_ai.key')),
+                    'test_id' => $validated['test_id'],
+                ]);
+
+            $data = $response->json();
+            $meta = $data['meta'] ?? [];
+
+            if (!$response->successful() || ($meta['success'] ?? false) !== true) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $meta['message'] ?? 'Failed to check MBTI result.',
+                    'debug' => $data,
+                ], 500);
+            }
+
+            if (empty($data['data'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Your test is not completed yet, or this test ID does not match the completed test.',
+                    'debug' => $data,
+                ], 200);
+            }
+
+            $mbtiData = $data['data'];
+            $mbtiType = $mbtiData['prediction'] ?? null;
+
+            if ($mbtiType && Auth::check()) {
+                /** @var \App\Models\User $user */
+                $user = Auth::user();
+
+                $user->profile()->updateOrCreate(
+                    ['user_id' => $user->id],
+                    [
+                        'mbti_type' => $mbtiType,
+                    ]
+                );
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $mbtiData,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Devil.ai result API error.',
+                'debug' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    private function getMbtiAdviceStyle(?string $mbtiType): string
+    {
+        if (!$mbtiType || strlen($mbtiType) !== 4) {
+            return 'No MBTI type is available yet. Give balanced and general risk-aware advice.';
+        }
+
+        $type = strtoupper($mbtiType);
+        $tips = [];
+
+        $tips[] = match ($type[0]) {
+            'I' => 'The user may prefer clear, quiet, detailed analysis before making decisions.',
+            'E' => 'The user may respond well to market sentiment, news flow, and social discussion.',
+            default => '',
+        };
+
+        $tips[] = match ($type[1]) {
+            'S' => 'Focus more on concrete data, price movement, facts, and recent news.',
+            'N' => 'Focus more on big-picture trends, future possibilities, and long-term themes.',
+            default => '',
+        };
+
+        $tips[] = match ($type[2]) {
+            'T' => 'Use logical reasoning, risk-reward thinking, and objective comparison.',
+            'F' => 'Include emotional discipline reminders and avoid panic or hype-based decisions.',
+            default => '',
+        };
+
+        $tips[] = match ($type[3]) {
+            'J' => 'Suggest a structured plan, clear entry/exit thinking, and risk control.',
+            'P' => 'Suggest flexibility, waiting for confirmation, and avoiding impulsive trades.',
+            default => '',
+        };
+
+        return implode(' ', array_filter($tips));
     }
 }

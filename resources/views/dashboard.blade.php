@@ -1,24 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Stock News Dashboard</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-</head>
+@extends('layouts.app')
 
-<body>
-    <div class="navbar">
-        <a href="/dashboard" class="navbar-title">
-            Stock Dashboard
-        </a>
+@section('title', 'Stock News Dashboard')
 
-        <div class="navbar-links">
-            {{-- <a href="/dashboard">Market</a> --}}
-            <a href="/news">News</a>
-            <a href="/watchlist">Watchlist</a>
-        </div>
-    </div>
-
+@section('content')
     <div class="container">
         <div class="header">
             <h1>Stock News Dashboard</h1>
@@ -116,24 +100,27 @@
             <button id="chatbotCloseBtn" class="chatbot-close-btn">×</button>
         </div>
 
-    <div id="chatbotMessages" class="chatbot-messages">
-        <div class="bot-message">
-            Hi, ask me about the latest stock news.
+        <div id="chatbotMessages" class="chatbot-messages">
+            <div class="bot-message">
+                Hi, ask me about the latest stock news.
+            </div>
+        </div>
+
+        <div class="chatbot-input-row">
+            <input
+                id="chatbotInput"
+                class="chatbot-input"
+                type="text"
+                placeholder="Ask about Nvidia, Apple, Tesla..."
+            >
+
+            <button id="chatbotSendBtn" class="chatbot-send-btn">
+                Send
+            </button>
         </div>
     </div>
+@endsection
 
-    <div class="chatbot-input-row">
-        <input
-            id="chatbotInput"
-            class="chatbot-input"
-            type="text"
-            placeholder="Ask about Nvidia, Apple, Tesla..."
-        >
-
-        <button id="chatbotSendBtn" class="chatbot-send-btn">
-            Send
-        </button>
-    </div>
-</div>
-</body>
-</html>
+@push('scripts')
+    @vite(['resources/js/app.js'])
+@endpush

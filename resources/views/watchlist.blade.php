@@ -1,23 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>My Watchlist</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body>
-      <div class="navbar">
-        <a href="/dashboard" class="navbar-title">
-            Stock Dashboard
-        </a>
+@extends('layouts.app')
 
-        <div class="navbar-links">
-            {{-- <a href="/dashboard">Market</a> --}}
-            <a href="/news">News</a>
-            <a href="/watchlist">Watchlist</a>
-        </div>
-    </div>
+@section('title', 'My Watchlist')
 
+@section('content')
     <div class="container">
         <div class="news-page-header" style="display: block;">
             <h1>My Watchlist</h1>
@@ -93,5 +78,8 @@
             </button>
         </div>
     </div>
-</body>
-</html>
+@endsection
+
+@push('scripts')
+    @vite(['resources/js/app.js'])
+@endpush

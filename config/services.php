@@ -50,4 +50,9 @@ return [
         'base_url' => 'https://generativelanguage.googleapis.com/v1beta',
     ],
 
+    'devil_ai' => [
+        'key' => env('DEVIL_AI_API_KEY'),
+        'base_url' => env('DEVIL_AI_BASE_URL', 'https://api.devil.ai/v1'),
+    ],
+
 ];
