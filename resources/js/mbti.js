@@ -137,13 +137,31 @@ checkBtn.addEventListener('click', async function () {
             return;
         }
 
+        const investmentProfile = result.investment_profile;
+
         resultBox.innerHTML = `
             <div class="mbti-result-card">
                 <h2>Your MBTI Result: ${prediction}</h2>
                 <p>Result Date: ${data.result_date || '-'}</p>
+
                 ${data.results_page ? `<a href="${data.results_page}" target="_blank">View Full Result</a>` : ''}
+
+                <hr>
+
+                <h3>Investment Style: ${investmentProfile?.risk_style || 'Unknown'}</h3>
+
+                <p>
+                    <strong>Strategy:</strong>
+                    ${investmentProfile?.strategy || 'No strategy available.'}
+                </p>
+
+                <p>
+                    <strong>Risk Reminder:</strong>
+                    ${investmentProfile?.warning || 'Investment involves risk. Please make your own decision carefully.'}
+                </p>
+
                 <small>
-                    This result is for self-reflection only and is not a professional psychological assessment.
+                    This is based on MBTI-style self-reflection only. It is not professional financial advice.
                 </small>
             </div>
         `;

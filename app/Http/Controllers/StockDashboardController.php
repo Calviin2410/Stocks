@@ -334,6 +334,7 @@ class StockDashboardController extends Controller
             $user = Auth::user();
             $mbtiType = $user?->profile?->mbti_type;
             $mbtiAdviceStyle = $this->getMbtiAdviceStyle($mbtiType);
+            $investmentProfile = $this->getMbtiInvestmentStrategy($mbtiType);
 
             if ($question === '') {
                 return response()->json([
@@ -379,6 +380,10 @@ class StockDashboardController extends Controller
     User MBTI profile:
     - MBTI Type: " . ($mbtiType ?? 'Unknown') . "
     - Advice style: {$mbtiAdviceStyle}
+    Investment profile based on MBTI:
+    - Risk Style: {$investmentProfile['risk_style']}
+    - Suggested Strategy: {$investmentProfile['strategy']}
+    - Risk Reminder: {$investmentProfile['warning']}
 
     When answering, personalize the explanation based on the user's MBTI type.
     Do not make investment decisions only based on MBTI.
@@ -531,6 +536,9 @@ class StockDashboardController extends Controller
             $mbtiData = $data['data'];
             $mbtiType = $mbtiData['prediction'] ?? null;
 
+
+            $investmentProfile = $this->getMbtiInvestmentStrategy($mbtiType);
+
             if ($mbtiType && Auth::check()) {
                 /** @var \App\Models\User $user */
                 $user = Auth::user();
@@ -546,6 +554,7 @@ class StockDashboardController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => $mbtiData,
+                'investment_profile' => $investmentProfile,
             ]);
         } catch (\Throwable $e) {
             return response()->json([
@@ -590,5 +599,76 @@ class StockDashboardController extends Controller
         };
 
         return implode(' ', array_filter($tips));
+    }
+
+    private function getMbtiInvestmentStrategy(?string $mbtiType): array
+    {
+        if (!$mbtiType || strlen($mbtiType) !== 4) {
+            return [
+                'risk_style' => 'Unknown',
+                'strategy' => 'Complete the MBTI test first to receive a personalized investment style.',
+                'warning' => 'Investment involves risk. Please make your own decision carefully.',
+            ];
+        }
+
+        $type = strtoupper($mbtiType);
+
+        $riskScore = 0;
+        $notes = [];
+
+        if ($type[0] === 'E') {
+            $riskScore += 1;
+            $notes[] = 'You may react more to market sentiment and discussion.';
+        } else {
+            $notes[] = 'You may prefer to analyze quietly before making decisions.';
+        }
+
+        if ($type[1] === 'N') {
+            $riskScore += 1;
+            $notes[] = 'You may focus on future trends and growth stories.';
+        } else {
+            $riskScore -= 1;
+            $notes[] = 'You may prefer concrete facts, stable data, and proven performance.';
+        }
+
+        if ($type[2] === 'T') {
+            $riskScore += 1;
+            $notes[] = 'You may make decisions using logic and comparison.';
+        } else {
+            $riskScore -= 1;
+            $notes[] = 'You may be more affected by stress, fear, or market emotions.';
+        }
+
+        if ($type[3] === 'P') {
+            $riskScore += 1;
+            $notes[] = 'You may prefer flexibility, but should avoid impulsive entries.';
+        } else {
+            $notes[] = 'You may prefer structured plans and clear rules.';
+        }
+
+        if ($riskScore <= -1) {
+            return [
+                'risk_style' => 'Conservative',
+                'strategy' => 'You may be more suitable for a cautious approach. Focus on stable assets, diversification, and avoid high-risk or hype-based trades.',
+                'warning' => 'Avoid putting too much money into one stock. Consider learning with small amounts or paper trading first.',
+                'notes' => $notes,
+            ];
+        }
+
+        if ($riskScore <= 1) {
+            return [
+                'risk_style' => 'Balanced',
+                'strategy' => 'You may be suitable for a balanced approach. Combine stable investments with limited exposure to growth stocks.',
+                'warning' => 'Use clear risk limits and avoid making decisions based only on short-term news.',
+                'notes' => $notes,
+            ];
+        }
+
+        return [
+            'risk_style' => 'Growth-Oriented',
+            'strategy' => 'You may be comfortable with higher-growth opportunities, but you should still control position size and avoid overconfidence.',
+            'warning' => 'High-growth stocks can be volatile. Do not rely only on positive news or hype.',
+            'notes' => $notes,
+        ];
     }
 }
