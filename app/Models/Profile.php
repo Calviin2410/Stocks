@@ -10,6 +10,7 @@ class Profile extends Model
         'user_id',
         'email',
         'phone_number',
+        'birth_date',
         'mbti_type',
     ];
 }

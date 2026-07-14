@@ -22,6 +22,7 @@
                 <input type="text" name="username" placeholder="Username" required>
                 <input type="email" name="email" placeholder="Email" required>
                 <input type="text" name="phone_number" placeholder="Phone Number" required>
+                <input type="date" name="birth_date" required>
                 <div class="password-wrapper">
                     <input
                         id="password"

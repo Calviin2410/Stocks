@@ -17,11 +17,23 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
+        $minBirthDate = now()->subYears(70)->toDateString();
+        $maxBirthDate = now()->subYears(18)->toDateString();
+
         $validated = $request->validate([
             'username' => ['required', 'string', 'max:255', 'unique:users,username'],
             'email' => ['required', 'email', 'unique:profiles,email'],
             'phone_number' => ['required', 'string', 'max:30'],
+            'birth_date' => [
+                'required',
+                'date',
+                'after_or_equal:' . $minBirthDate,
+                'before_or_equal:' . $maxBirthDate,
+            ],
             'password' => ['required', 'min:6', 'confirmed'],
+        ], [
+            'birth_date.after_or_equal' => 'You must be 70 years old or below to register.',
+            'birth_date.before_or_equal' => 'You must be at least 18 years old to register.',
         ]);
 
         $user = DB::transaction(function () use ($validated) {
@@ -33,6 +45,7 @@ class AuthController extends Controller
             $user->profile()->create([
                 'email' => $validated['email'],
                 'phone_number' => $validated['phone_number'],
+                'birth_date' => $validated['birth_date'],
             ]);
 
             return $user;
