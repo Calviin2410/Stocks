@@ -69,8 +69,39 @@
 
         <div id="mbtiResult" class="mbti-result"></div>
     </div>
+
+    <button id="chatbotOpenBtn" class="chatbot-open-btn show">
+        Stock Assistant
+    </button>
+
+    <div id="chatbotBox" class="chatbot-box hide">
+        <div class="chatbot-header">
+            <span>Stock Assistant</span>
+            <button id="chatbotCloseBtn" class="chatbot-close-btn">×</button>
+        </div>
+
+        <div id="chatbotMessages" class="chatbot-messages">
+            <div class="bot-message">
+                Hi, ask me about the latest stock news.
+            </div>
+        </div>
+
+        <div class="chatbot-input-row">
+            <input
+                id="chatbotInput"
+                class="chatbot-input"
+                type="text"
+                placeholder="Ask about Nvidia, Apple, Tesla..."
+            >
+
+            <button id="chatbotSendBtn" class="chatbot-send-btn">
+                Send
+            </button>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
     @vite(['resources/js/mbti.js'])
+    @vite(['resources/js/app.js'])
 @endpush

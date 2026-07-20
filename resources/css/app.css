@@ -40,6 +40,7 @@
             gap: 18px;
             font-size: 14px;
             color: #d1d5db;
+            align-items: center;
         }
 
         .container {
@@ -832,6 +833,8 @@
 
         .logout-form {
             margin: 0;
+            display: flex;
+            align-items: center;
         }
 
         .logout-btn {
@@ -1153,5 +1156,677 @@
 
             .mbti-action-buttons {
                 width: 100%;
+            }
+        }
+        
+        .navbar-user-link {
+            display: inline-flex;
+            align-items: center;
+            height: 54px;
+            color: #d1d5db;
+            font-weight: 800;
+            text-decoration: none;
+            line-height: 1;
+        }
+
+        .navbar-user-link:hover {
+            color: white;
+            text-decoration: underline;
+        }
+
+        .profile-edit-card {
+            max-width: 640px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .profile-edit-header {
+            margin-bottom: 24px;
+        }
+
+        .profile-edit-header h1 {
+            margin-bottom: 8px;
+            color: #111827;
+            font-size: 30px;
+        }
+
+        .profile-edit-header p {
+            color: #6b7280;
+            font-size: 16px;
+        }
+
+        .profile-edit-form {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .profile-field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .profile-field label {
+            font-weight: 700;
+            color: #374151;
+        }
+
+        .profile-field input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            font-size: 15px;
+            background: white;
+        }
+
+        .profile-field input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        .profile-field input:disabled {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .profile-field small {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .profile-save-btn {
+            margin-top: 10px;
+            padding: 14px;
+            background: #111827;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .profile-save-btn:hover {
+            background: #374151;
+        }
+
+        .success-box {
+            background: #ecfdf5;
+            border: 1px solid #10b981;
+            color: #065f46;
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+        }
+
+        .subscribe-nav-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            height: 54px;
+            padding: 0 28px;
+
+            background: #2563eb;
+            color: white;
+            border-radius: 14px;
+            text-decoration: none;
+            font-weight: 800;
+            line-height: 1;
+            margin: 0;
+        }
+
+        .subscribe-nav-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .premium-nav-badge {
+            background: #ecfdf5;
+            color: #047857;
+            padding: 10px 16px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 800;
+        }
+
+        .subscription-page {
+            max-width: 880px;
+            margin: 40px auto;
+        }
+
+        .subscription-header {
+            margin-bottom: 24px;
+        }
+
+        .subscription-header h1 {
+            margin: 12px 0 8px;
+            color: #111827;
+        }
+
+        .subscription-header p {
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        .subscription-demo-badge {
+            display: inline-block;
+            background: #fff7ed;
+            color: #c2410c;
+            padding: 8px 13px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .current-subscription-box {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            color: #065f46;
+            padding: 16px 18px;
+            border-radius: 14px;
+            margin-bottom: 22px;
+        }
+
+        .subscription-package-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .subscription-package-card {
+            display: block;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 18px;
+            padding: 20px;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .subscription-package-card:hover {
+            border-color: #2563eb;
+            transform: translateY(-2px);
+        }
+
+        .subscription-package-card input {
+            display: none;
+        }
+
+        .subscription-package-card:has(input:checked) {
+            border-color: #2563eb;
+            background: #eff6ff;
+            box-shadow: 0 8px 22px rgba(37, 99, 235, 0.12);
+        }
+
+        .subscription-package-content h3 {
+            color: #111827;
+            margin-bottom: 8px;
+        }
+
+        .subscription-package-content p {
+            color: #6b7280;
+            margin-bottom: 14px;
+        }
+
+        .subscription-package-content strong {
+            color: #2563eb;
+            font-size: 22px;
+        }
+
+        .demo-payment-section {
+            background: white;
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.07);
+        }
+
+        .demo-payment-section h2 {
+            color: #111827;
+            margin-bottom: 8px;
+        }
+
+        .demo-payment-section > p {
+            color: #6b7280;
+            margin-bottom: 22px;
+        }
+
+        .subscription-field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .subscription-field label {
+            color: #374151;
+            font-weight: 700;
+        }
+
+        .subscription-field input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            font-size: 15px;
+        }
+
+        .subscription-field input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+        }
+
+        .subscription-payment-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .subscription-warning {
+            background: #fff7ed;
+            color: #c2410c;
+            border: 1px solid #fed7aa;
+            padding: 13px 15px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+        }
+
+        .subscription-submit-btn {
+            width: 100%;
+            padding: 15px 18px;
+            background: #111827;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .subscription-submit-btn:hover {
+            background: #374151;
+        }
+
+        .profile-subscription-section {
+            max-width: 640px;
+            margin: 24px auto 40px;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .profile-subscription-section > div:first-child {
+            margin-bottom: 20px;
+        }
+
+        .profile-subscription-section h2 {
+            color: #111827;
+            margin-bottom: 7px;
+        }
+
+        .profile-subscription-section p {
+            color: #6b7280;
+        }
+
+        .profile-subscription-active,
+        .profile-subscription-free {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 22px;
+            padding: 20px;
+            border-radius: 16px;
+            background: #f9fafb;
+        }
+
+        .profile-plan-badge,
+        .profile-free-badge {
+            display: inline-block;
+            padding: 7px 11px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .profile-plan-badge {
+            background: #ecfdf5;
+            color: #047857;
+        }
+
+        .profile-free-badge {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+
+        .profile-subscription-actions {
+            min-width: 190px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .profile-renew-btn {
+            display: block;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            text-align: center;
+            padding: 12px 15px;
+            border-radius: 10px;
+            font-weight: 800;
+        }
+
+        .profile-renew-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .profile-cancel-btn {
+            width: 100%;
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 12px 15px;
+            border-radius: 10px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .profile-cancel-btn:hover {
+            background: #dc2626;
+        }
+
+        @media (max-width: 850px) {
+            .subscription-package-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .subscription-package-grid,
+            .subscription-payment-row {
+                grid-template-columns: 1fr;
+            }
+
+            .current-subscription-box,
+            .profile-subscription-active,
+            .profile-subscription-free {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        .navbar {
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 44px;
+            background: #111827;
+        }
+
+        .navbar-title {
+            display: inline-flex;
+            align-items: center;
+            margin: 0 !important;
+            color: white;
+            font-size: 22px;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .navbar-links {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+        }
+
+        .navbar-links a,
+        .navbar-user-link,
+        .subscribe-nav-btn,
+        .premium-nav-badge {
+            margin: 0 !important;
+            line-height: 1;
+        }
+
+        .navbar-links > a {
+            display: inline-flex;
+            align-items: center;
+            height: 44px;
+            color: #d1d5db;
+            text-decoration: none;
+            font-weight: 800;
+        }
+
+        .navbar-links > a:hover {
+            color: white;
+        }
+
+        /* Premium / Subscribe button */
+        .subscribe-nav-btn,
+        .premium-nav-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            height: 44px;
+            padding: 0 22px;
+            border-radius: 12px;
+
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 15px;
+        }
+
+        /* Subscribe color */
+        .subscribe-nav-btn {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .subscribe-nav-btn:hover {
+            background: #2563eb;
+            color: white;
+        }
+
+        /* Premium color */
+        .premium-nav-badge {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .premium-nav-badge:hover {
+            background: #d97706;
+            color: white;
+        }
+
+        /* Username */
+        .navbar-user-link {
+            display: inline-flex;
+            align-items: center;
+            height: 44px;
+            color: #d1d5db;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .navbar-user-link:hover {
+            color: white;
+            text-decoration: none;
+        }
+
+        /* Logout */
+        .logout-form {
+            margin: 0 !important;
+            display: flex;
+            align-items: center;
+        }
+
+        .logout-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            height: 44px;
+            padding: 0 22px;
+            margin: 0 !important;
+
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 15px;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+
+        .tutorial-hero {
+            background: linear-gradient(135deg, #111827, #1f2937);
+            color: white;
+            border-radius: 22px;
+            padding: 36px;
+            margin-bottom: 26px;
+        }
+
+        .tutorial-badge {
+            display: inline-block;
+            background: #f59e0b;
+            color: white;
+            padding: 8px 13px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 14px;
+        }
+
+        .tutorial-hero h1 {
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        .tutorial-hero p {
+            color: #d1d5db;
+            font-size: 17px;
+            line-height: 1.6;
+            max-width: 780px;
+        }
+
+        .tutorial-grid {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+
+        .tutorial-video-card,
+        .tutorial-info-card,
+        .tutorial-section {
+            background: white;
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .tutorial-video-card h2,
+        .tutorial-info-card h2,
+        .tutorial-section h2 {
+            color: #111827;
+            margin-bottom: 12px;
+        }
+
+        .tutorial-video-card p,
+        .tutorial-info-card p,
+        .tutorial-section p {
+            color: #4b5563;
+            line-height: 1.6;
+        }
+
+        .tutorial-video-wrapper {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%;
+            margin: 18px 0;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #111827;
+        }
+
+        .tutorial-video-wrapper iframe {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .tutorial-info-card h3 {
+            margin-top: 18px;
+            margin-bottom: 8px;
+            color: #111827;
+        }
+
+        .tutorial-info-card ul {
+            padding-left: 20px;
+            color: #4b5563;
+            line-height: 1.8;
+        }
+
+        .tutorial-google-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 16px !important;
+            background: #2563eb;
+            color: white !important;
+            padding: 12px 18px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 800;
+        }
+
+        .tutorial-google-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .tutorial-example-box {
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+            border-radius: 16px;
+            padding: 18px;
+        }
+
+        .tutorial-risk-box {
+            background: #fff7ed;
+            color: #c2410c;
+            border: 1px solid #fed7aa;
+            border-radius: 16px;
+            padding: 18px;
+            font-weight: 700;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 900px) {
+            .tutorial-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tutorial-hero h1 {
+                font-size: 30px;
             }
         }

@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Stock Dashboard')</title>
+    <title>@yield('title', 'MarketLens')</title>
 
     @vite(['resources/css/app.css'])
     @stack('styles')
@@ -10,7 +10,7 @@
 <body>
     <div class="navbar">
         <a href="/dashboard" class="navbar-title">
-            Stock Dashboard
+            MarketLens
         </a>
 
         <div class="navbar-links">
@@ -19,13 +19,40 @@
             <a href="/watchlist">Watchlist</a>
             <a href="/mbti">MBTI Quiz</a>
 
+            @if (auth()->user()->profile?->hasActiveSubscription())
+                <a href="{{ route('tutorial.index') }}">
+                    Tutorial
+                </a>
+            @endif
+
             @auth
-                <span class="navbar-user">
-                    {{ Auth::user()->username }}
-                </span>
+                @if (auth()->user()->profile?->hasActiveSubscription())
+                    <a
+                        href="{{ route('subscription.show') }}"
+                        class="premium-nav-badge"
+                    >
+                        Premium
+                    </a>
+                @else
+                    <a
+                        href="{{ route('subscription.show') }}"
+                        class="subscribe-nav-btn"
+                    >
+                        Subscribe
+                    </a>
+                @endif
+
+                <a href="{{ route('profile.edit') }}" class="navbar-user-link">
+                    {{ auth()->user()->username }}
+
+                    @if (auth()->user()->profile?->mbti_type)
+                        | {{ auth()->user()->profile->mbti_type }}
+                    @endif
+                </a>
 
                 <form method="POST" action="/logout" class="logout-form">
                     @csrf
+
                     <button type="submit" class="logout-btn">
                         Logout
                     </button>

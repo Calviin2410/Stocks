@@ -468,7 +468,7 @@ class StockDashboardController extends Controller
                 ->get(rtrim(config('services.devil_ai.base_url'), '/') . '/new_test', [
                     'api_key' => trim(config('services.devil_ai.key')),
                     'return_url' => url('/mbti'),
-                    'company_name' => 'Stock Dashboard',
+                    'company_name' => 'MarketLens',
                     'completed_message' => 'Your MBTI test is completed. Please return to the dashboard to check your result.',
                     'ask_gender' => '0',
                     'ask_age' => '0',

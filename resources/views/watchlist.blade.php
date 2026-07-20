@@ -49,11 +49,11 @@
         </div>
     </div>
 
-    <button id="chatbotOpenBtn" class="chatbot-open-btn">
+    <button id="chatbotOpenBtn" class="chatbot-open-btn show">
         Stock Assistant
     </button>
 
-    <div id="chatbotBox" class="chatbot-box">
+    <div id="chatbotBox" class="chatbot-box hide">
         <div class="chatbot-header">
             <span>Stock Assistant</span>
             <button id="chatbotCloseBtn" class="chatbot-close-btn">×</button>

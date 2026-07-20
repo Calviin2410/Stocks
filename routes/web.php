@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StockDashboardController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\TutorialController;
 use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
@@ -35,6 +38,24 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/chatbot', [StockDashboardController::class, 'chatbot']);
 
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])
+        ->name('profile.edit');
+
+    Route::post('/profile/update', [ProfileController::class, 'update'])
+        ->name('profile.update');
+
     Route::post('/mbti/new-test', [StockDashboardController::class, 'createDevilAiTest']);
     Route::get('/mbti/check-test', [StockDashboardController::class, 'checkDevilAiTest']);
+
+    Route::get('/tutorial', [TutorialController::class, 'index'])
+        ->name('tutorial.index');
+        
+    Route::get('/subscribe', [SubscriptionController::class, 'show'])
+        ->name('subscription.show');
+
+    Route::post('/subscribe', [SubscriptionController::class, 'subscribe'])
+        ->name('subscription.subscribe');
+
+    Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])
+        ->name('subscription.cancel');
 });

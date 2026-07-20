@@ -8,7 +8,7 @@
     <div class="auth-container">
         <div class="auth-card">
             <h1>Create Account</h1>
-            <p>Register to access the stock dashboard.</p>
+            <p>Register to access the MarketLens.</p>
 
             @if ($errors->any())
                 <div class="error-box">
