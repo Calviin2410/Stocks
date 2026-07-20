@@ -23,6 +23,24 @@
                 <input type="email" name="email" placeholder="Email" required>
                 <input type="text" name="phone_number" placeholder="Phone Number" required>
                 <input type="date" name="birth_date" required>
+
+                <input
+                    type="number"
+                    name="salary"
+                    placeholder="Monthly Salary"
+                    value="{{ old('salary') }}"
+                    step="0.01"
+                    min="0"
+                    required
+                >
+
+                <input
+                    type="text"
+                    name="job_position"
+                    placeholder="Job Position"
+                    value="{{ old('job_position') }}"
+                    required
+                >
                 <div class="password-wrapper">
                     <input
                         id="password"

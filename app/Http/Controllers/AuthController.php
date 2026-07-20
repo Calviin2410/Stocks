@@ -30,6 +30,8 @@ class AuthController extends Controller
                 'after_or_equal:' . $minBirthDate,
                 'before_or_equal:' . $maxBirthDate,
             ],
+            'salary' => ['required', 'numeric', 'min:0'],
+            'job_position' => ['required', 'string', 'max:255'],
             'password' => ['required', 'min:6', 'confirmed'],
         ], [
             'birth_date.after_or_equal' => 'You must be 70 years old or below to register.',
@@ -46,6 +48,8 @@ class AuthController extends Controller
                 'email' => $validated['email'],
                 'phone_number' => $validated['phone_number'],
                 'birth_date' => $validated['birth_date'],
+                'salary' => $validated['salary'],
+                'job_position' => $validated['job_position'],
             ]);
 
             return $user;

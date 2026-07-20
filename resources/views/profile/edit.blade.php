@@ -60,7 +60,38 @@
                     <input
                         type="date"
                         name="birth_date"
-                        value="{{ old('birth_date', $profile->birth_date ?? '') }}"
+                        value="{{ old('birth_date', $profile?->birth_date?->format('Y-m-d')) }}"
+                        required
+                    >
+                </div>
+
+                <div class="profile-field">
+                    <label>Age</label>
+                    <input
+                        type="text"
+                        value="{{ $profile?->age ? $profile->age . ' years old' : '-' }}"
+                        disabled
+                    >
+                </div>
+
+                <div class="profile-field">
+                    <label>Monthly Salary</label>
+                    <input
+                        type="number"
+                        name="salary"
+                        value="{{ old('salary', $profile->salary ?? '') }}"
+                        step="0.01"
+                        min="0"
+                        required
+                    >
+                </div>
+
+                <div class="profile-field">
+                    <label>Job Position</label>
+                    <input
+                        type="text"
+                        name="job_position"
+                        value="{{ old('job_position', $profile->job_position ?? '') }}"
                         required
                     >
                 </div>

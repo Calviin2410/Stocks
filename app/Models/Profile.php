@@ -11,6 +11,8 @@ class Profile extends Model
         'email',
         'phone_number',
         'birth_date',
+        'salary',
+        'job_position',
         'mbti_type',
         'is_subscribed',
         'subscription_plan',
@@ -21,8 +23,8 @@ class Profile extends Model
 
     protected $casts = [
         'birth_date' => 'date',
+        'salary' => 'decimal:2',
         'is_subscribed' => 'boolean',
-        'subscription_price' => 'decimal:2',
         'subscribed_at' => 'datetime',
         'subscription_expires_at' => 'datetime',
     ];
@@ -32,5 +34,12 @@ class Profile extends Model
         return $this->is_subscribed
             && $this->subscription_expires_at !== null
             && $this->subscription_expires_at->isFuture();
+    }
+
+    public function getAgeAttribute()
+    {
+        return $this->birth_date
+            ? $this->birth_date->age
+            : null;
     }
 }

@@ -5,7 +5,7 @@
 @section('content')
     <div class="container">
         <div class="header">
-            <h1>Stock News Dashboard</h1>
+            <h1>MarketLens Dashboard</h1>
             <p>Track stock market updates and latest financial news.</p>
         </div>
 

@@ -22,7 +22,7 @@
 
         .navbar {
             height: 64px;
-            background: #111827;
+            background: #112725;
             color: white;
             display: flex;
             justify-content: space-between;
@@ -1829,4 +1829,48 @@
             .tutorial-hero h1 {
                 font-size: 30px;
             }
+        }
+
+        .navbar-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+            margin: 0 !important;
+        }
+
+        .navbar-logo {
+            width: 46px;
+            height: 46px;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+
+        .navbar-brand-text {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            line-height: 1.1;
+        }
+
+        .navbar-brand-name {
+            color: white;
+            font-size: 26px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+        }
+
+        .navbar-slogan {
+            color: #9ca3af;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .navbar-brand:hover .navbar-brand-name {
+            color: #f9fafb;
+        }
+
+        .navbar-brand:hover .navbar-slogan {
+            color: #d1d5db;
         }

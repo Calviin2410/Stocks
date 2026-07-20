@@ -52,6 +52,8 @@ class ProfileController extends Controller
                 'after_or_equal:' . $minBirthDate,
                 'before_or_equal:' . $maxBirthDate,
             ],
+            'salary' => ['required', 'numeric', 'min:0'],
+            'job_position' => ['required', 'string', 'max:255'],
         ], [
             'birth_date.after_or_equal' => 'You must be 70 years old or below.',
             'birth_date.before_or_equal' => 'You must be at least 18 years old.',
@@ -68,6 +70,8 @@ class ProfileController extends Controller
                     'email' => $validated['email'],
                     'phone_number' => $validated['phone_number'],
                     'birth_date' => $validated['birth_date'],
+                    'salary' => $validated['salary'],
+                    'job_position' => $validated['job_position'],
                 ]
             );
         });

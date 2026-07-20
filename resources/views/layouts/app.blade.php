@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <link rel="icon" type="image/png" href="{{ asset('image/Logo.png') }}">
+
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'MarketLens')</title>
 
@@ -9,8 +11,13 @@
 </head>
 <body>
     <div class="navbar">
-        <a href="/dashboard" class="navbar-title">
-            MarketLens
+        <a href="/dashboard" class="navbar-brand">
+            <img src="{{ asset('image/Logo.png') }}" alt="MarketLens Logo" class="navbar-logo">
+
+            <div class="navbar-brand-text">
+                <span class="navbar-brand-name">MarketLens</span>
+                <span class="navbar-slogan">See the Market. Own the Move.</span>
+            </div>
         </a>
 
         <div class="navbar-links">
