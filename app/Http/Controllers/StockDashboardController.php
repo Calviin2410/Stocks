@@ -138,7 +138,9 @@ class StockDashboardController extends Controller
                             'posted_at' => isset($article['datetime'])
                                 ? \Carbon\Carbon::createFromTimestamp($article['datetime'])->toDateTimeString()
                                 : now()->toDateTimeString(),
-                            'image' => $article['image'] ?: 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c',
+                            'image' => !empty($article['image'])
+                                ? $article['image']
+                                : 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c',
                             'url' => $article['url'] ?? '#',
                             'category' => $this->symbolToCategory($symbol),
                             'description' => $article['summary'] ?? 'No description available for this news.',
@@ -331,11 +333,6 @@ class StockDashboardController extends Controller
         try {
             $question = trim($request->input('message', ''));
 
-            $user = Auth::user();
-            $mbtiType = $user?->profile?->mbti_type;
-            $mbtiAdviceStyle = $this->getMbtiAdviceStyle($mbtiType);
-            $investmentProfile = $this->getMbtiInvestmentStrategy($mbtiType);
-
             if ($question === '') {
                 return response()->json([
                     'success' => false,
@@ -343,6 +340,21 @@ class StockDashboardController extends Controller
                     'message' => 'Message is required.',
                 ]);
             }
+
+            /** @var \App\Models\User|null $user */
+            $user = Auth::user();
+
+            $profile = $user?->profile;
+            $mbtiType = $profile?->mbti_type;
+            $salary = $profile?->salary;
+            $isPremium = $profile?->hasActiveSubscription() ?? false;
+
+            $mbtiAdviceStyle = $this->getMbtiAdviceStyle($mbtiType);
+            $investmentProfile = $this->getMbtiInvestmentStrategy($mbtiType);
+
+            $salaryRiskProfile = $isPremium
+                ? $this->getSalaryRiskProfile($salary)
+                : 'Salary-based risk analysis is only available for Premium users.';
 
             $newsResponse = $this->news(new Request([
                 'category' => 'all',
@@ -353,72 +365,98 @@ class StockDashboardController extends Controller
 
             $newsContext = collect($newsData)
                 ->take(8)
-                ->map(function ($article) {
-                    return "- {$article['title']} ({$article['source_name']}, {$article['posted_at']}): {$article['description']}";
+                ->map(function ($item) {
+                    return "- Title: " . ($item['title'] ?? '-') . "\n"
+                        . "  Source: " . ($item['source_name'] ?? '-') . "\n"
+                        . "  Summary: " . ($item['description'] ?? '-') . "\n"
+                        . "  Link: " . ($item['url'] ?? '-');
                 })
-                ->implode("\n");
+                ->implode("\n\n");
 
             if ($newsContext === '') {
                 $newsContext = 'No stock news is currently available from the dashboard.';
             }
 
             $prompt = "
-    You are a stock market dashboard assistant.
+    You are MarketLens, a stock market dashboard assistant.
 
     Rules:
     - Answer in simple English.
-    - You may use the dashboard news context and Google Search when needed.
-    - You may provide news-based analysis, sentiment, risks, and possible market impact.
+    - Use dashboard news context when it is relevant.
+    - If the user asks about a company, stock, or news that is not in the dashboard context, use Google Search if available.
+    - Include relevant source links when online information is used.
     - You may give a simple educational signal: Buy, Hold, Wait, Avoid, or Sell.
-    - Use Buy when the news sentiment looks clearly positive.
-    - Use Hold when the news sentiment is mixed or uncertain.
-    - Use Wait when there is not enough clear positive signal yet.
-    - Use Avoid when the stock looks too risky to enter based on the news.
-    - Use Sell when the news sentiment looks clearly negative or there are strong downside risks.
-    - Do not say 'you must buy' or 'you must sell'.
+    - Do not say the user must buy or must sell.
+    - Do not promise profit.
+    - Always include risks.
     - Keep the answer short and clear.
-    User MBTI profile:
+
+    Signal meaning:
+    - Buy: news sentiment looks clearly positive.
+    - Hold: news is mixed or uncertain.
+    - Wait: not enough confirmation yet.
+    - Avoid: risk looks too high for new entry.
+    - Sell: news sentiment looks clearly negative or downside risk is strong.
+
+    User profile:
     - MBTI Type: " . ($mbtiType ?? 'Unknown') . "
-    - Advice style: {$mbtiAdviceStyle}
+    - MBTI Advice Style: {$mbtiAdviceStyle}
+    - Premium User: " . ($isPremium ? 'Yes' : 'No') . "
+    - Monthly Salary: " . ($isPremium ? ('RM' . ($salary ?? 'Unknown')) : 'Hidden for non-premium user') . "
+    - Salary Risk Profile: {$salaryRiskProfile}
+
     Investment profile based on MBTI:
     - Risk Style: {$investmentProfile['risk_style']}
     - Suggested Strategy: {$investmentProfile['strategy']}
     - Risk Reminder: {$investmentProfile['warning']}
 
-    When answering, personalize the explanation based on the user's MBTI type.
-    Do not make investment decisions only based on MBTI.
-    Use MBTI only to adjust the advice style, risk reminder, and explanation tone.
+    Personalization rules:
+    - Use MBTI only to adjust explanation style and risk reminder.
+    - If Premium User is Yes, include salary-based risk analysis.
+    - If Premium User is No, mention that salary-based analysis is available for Premium users.
+    - Do not make decisions only based on MBTI or salary.
 
     Answer format:
     Signal: Buy / Hold / Wait / Avoid / Sell
-    Reason: One to three simple sentences.
-    Risk: One short risk.
-    MBTI Tip: One short sentence based on the user's MBTI type.
+    Reason: 1 to 3 simple sentences.
+    Risk: 1 short risk.
+    MBTI Tip: 1 short sentence.
+    Salary Risk: 1 short sentence.
+    Sources: Provide relevant links if available.
     Note: Investment involves risk. Please make your own decision carefully.
 
-    Dashboard stock news context:
+    Dashboard news context:
     {$newsContext}
 
     User question:
     {$question}
     ";
 
-            $response = Http::withHeaders([
-                'x-goog-api-key' => config('services.gemini.key'),
-            ])
-                ->timeout(30)
-                ->acceptJson()
-                ->post(
-                    config('services.gemini.base_url') . '/interactions',
+            $requestBody = [
+                'contents' => [
                     [
-                        'model' => 'gemini-2.5-flash',
-                        'input' => $prompt,
-                        'tools' => [
+                        'parts' => [
                             [
-                                'type' => 'google_search',
+                                'text' => $prompt,
                             ],
                         ],
-                    ]
+                    ],
+                ],
+                'tools' => [
+                    [
+                        'google_search' => (object) [],
+                    ],
+                ],
+            ];
+
+            $response = Http::timeout(40)
+                ->acceptJson()
+                ->withHeaders([
+                    'x-goog-api-key' => config('services.gemini.key'),
+                ])
+                ->post(
+                    config('services.gemini.base_url') . '/models/gemini-1.5-flash:generateContent',
+                    $requestBody
                 );
 
             if ($response->failed()) {
@@ -432,23 +470,12 @@ class StockDashboardController extends Controller
 
             $data = $response->json();
 
-            $reply = collect($data['steps'] ?? [])
-                ->where('type', 'model_output')
-                ->flatMap(function ($step) {
-                    return $step['content'] ?? [];
-                })
-                ->where('type', 'text')
-                ->pluck('text')
-                ->implode("\n\n");
-
-            if ($reply === '') {
-                $reply = $data['output_text'] ?? 'No reply generated.';
-            }
+            $answer = $data['candidates'][0]['content']['parts'][0]['text']
+                ?? 'Sorry, I cannot generate an answer right now.';
 
             return response()->json([
                 'success' => true,
-                'source' => 'gemini',
-                'reply' => $reply,
+                'reply' => $answer,
             ]);
         } catch (\Throwable $e) {
             return response()->json([
@@ -670,5 +697,26 @@ class StockDashboardController extends Controller
             'warning' => 'High-growth stocks can be volatile. Do not rely only on positive news or hype.',
             'notes' => $notes,
         ];
+    }
+
+    private function getSalaryRiskProfile($salary): string
+    {
+        if (!$salary || $salary <= 0) {
+            return 'Salary is not available. Give general risk-aware analysis only.';
+        }
+
+        if ($salary < 2500) {
+            return 'The user may have lower income flexibility. Suggest a conservative approach, avoid high-risk concentration, and explain that small learning amounts or paper trading may be safer.';
+        }
+
+        if ($salary < 6000) {
+            return 'The user may have moderate income flexibility. Suggest a balanced approach, diversification, and clear risk limits.';
+        }
+
+        if ($salary < 12000) {
+            return 'The user may have stronger income flexibility. Suggest balanced-to-growth exposure, but still remind about position sizing and volatility.';
+        }
+
+        return 'The user may have higher income flexibility. Suggest more flexible growth-oriented strategies, but warn against overconfidence and large single-stock concentration.';
     }
 }
