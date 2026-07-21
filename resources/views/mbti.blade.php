@@ -71,12 +71,12 @@
     </div>
 
     <button id="chatbotOpenBtn" class="chatbot-open-btn show">
-        Stock Assistant
+        MarketLens Assistant
     </button>
 
     <div id="chatbotBox" class="chatbot-box hide">
         <div class="chatbot-header">
-            <span>Stock Assistant</span>
+            <span>MarketLens Assistant</span>
             <button id="chatbotCloseBtn" class="chatbot-close-btn">×</button>
         </div>
 

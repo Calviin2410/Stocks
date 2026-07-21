@@ -331,13 +331,28 @@ class StockDashboardController extends Controller
     public function chatbot(Request $request): JsonResponse
     {
         try {
-            $question = trim($request->input('message', ''));
+            $question = trim((string) $request->input('message', ''));
 
             if ($question === '') {
                 return response()->json([
                     'success' => false,
                     'source' => 'gemini',
                     'message' => 'Message is required.',
+                ]);
+            }
+
+            $lowerQuestion = mb_strtolower($question);
+
+            /*
+            * Casual greeting: do not force investment analysis.
+            */
+            $isGreetingOnly = preg_match('/^(hi|hello|hey|halo|hihi|yo|你好|嗨|哈喽)$/iu', trim($question));
+
+            if ($isGreetingOnly) {
+                return response()->json([
+                    'success' => true,
+                    'reply' => "Hi! I am MarketLens Stock Assistant. You can ask me about latest stock news, stock strategy, MBTI-based investment style, or Premium salary-based risk analysis.",
+                    'used_google_search' => false,
                 ]);
             }
 
@@ -357,46 +372,39 @@ class StockDashboardController extends Controller
                 : 'Salary-based risk analysis is only available for Premium users.';
 
             /*
-            * Dashboard news context.
-            * This gives Gemini your existing dashboard news first.
+            * Intent detection.
             */
-            $newsResponse = $this->news(new Request([
-                'category' => 'all',
-                'search' => '',
-            ]));
+            $personalKeywords = [
+                'personal',
+                'mbti',
+                'strategy',
+                'profile',
+                'salary',
+                'risk style',
+                'investment style',
+                'my information',
+                'my info',
+            ];
 
-            $newsData = $newsResponse->getData(true)['data'] ?? [];
-
-            $newsContext = collect($newsData)
-                ->take(8)
-                ->map(function ($item) {
-                    return "- Title: " . ($item['title'] ?? '-') . "\n"
-                        . "  Source: " . ($item['source_name'] ?? '-') . "\n"
-                        . "  Summary: " . ($item['description'] ?? '-') . "\n"
-                        . "  Link: " . ($item['url'] ?? '-');
-                })
-                ->implode("\n\n");
-
-            if ($newsContext === '') {
-                $newsContext = 'No stock news is currently available from the dashboard.';
-            }
-
-            /*
-            * Only use Google Search for online/current/latest/news questions.
-            * This saves Gemini quota.
-            */
-            $lowerQuestion = strtolower($question);
-
-            $googleSearchKeywords = [
-                'latest',
-                'today',
-                'current',
-                'recent',
-                'online',
-                'news',
-                'breaking',
-                'earnings',
-                'announcement',
+            $stockKeywords = [
+                'buy',
+                'sell',
+                'hold',
+                'wait',
+                'avoid',
+                'stock',
+                'share',
+                'market',
+                'invest',
+                'investment',
+                'nvidia',
+                'nvda',
+                'apple',
+                'aapl',
+                'tesla',
+                'tsla',
+                'spy',
+                's&p',
                 'honda',
                 'toyota',
                 'microsoft',
@@ -407,10 +415,145 @@ class StockDashboardController extends Controller
                 'crypto',
             ];
 
-            $useGoogleSearch = collect($googleSearchKeywords)
-                ->contains(function ($keyword) use ($lowerQuestion) {
-                    return str_contains($lowerQuestion, $keyword);
-                });
+            $onlineKeywords = [
+                'latest',
+                'today',
+                'current',
+                'recent',
+                'online',
+                'news',
+                'breaking',
+                'earnings',
+                'announcement',
+                'update',
+            ];
+
+            $casualKeywords = [
+                'what can you do',
+                'help',
+                'how to use',
+                'who are you',
+                '功能',
+                '可以做什么',
+            ];
+
+            $isPersonalQuestion = collect($personalKeywords)->contains(function ($keyword) use ($lowerQuestion) {
+                return str_contains($lowerQuestion, $keyword);
+            });
+
+            $isStockQuestion = collect($stockKeywords)->contains(function ($keyword) use ($lowerQuestion) {
+                return str_contains($lowerQuestion, $keyword);
+            });
+
+            $isOnlineQuestion = collect($onlineKeywords)->contains(function ($keyword) use ($lowerQuestion) {
+                return str_contains($lowerQuestion, $keyword);
+            });
+
+            $isCasualQuestion = collect($casualKeywords)->contains(function ($keyword) use ($lowerQuestion) {
+                return str_contains($lowerQuestion, $keyword);
+            });
+
+            /*
+            * Local personal strategy.
+            * This does not call Gemini, so it saves quota.
+            */
+            if ($isPersonalQuestion && !$isOnlineQuestion) {
+                return response()->json([
+                    'success' => true,
+                    'reply' => "
+    Profile Summary:
+    Your MBTI risk style is {$investmentProfile['risk_style']}.
+
+    Suggested Strategy:
+    {$investmentProfile['strategy']}
+
+    Risk Reminder:
+    {$investmentProfile['warning']}
+
+    MBTI Tip:
+    {$mbtiAdviceStyle}
+
+    Salary Risk:
+    {$salaryRiskProfile}
+
+    Sources:
+    This answer is based on your saved profile information.
+
+    Note:
+    Investment involves risk. Please make your own decision carefully.
+    ",
+                    'used_google_search' => false,
+                ]);
+            }
+
+            /*
+            * Casual help question.
+            */
+            if ($isCasualQuestion && !$isStockQuestion && !$isOnlineQuestion) {
+                return response()->json([
+                    'success' => true,
+                    'reply' => "I can help you with stock news, simple Buy/Hold/Wait/Sell signals, MBTI-based investment style, and Premium salary-based risk analysis. For example, you can ask: \"based on my MBTI, give me a strategy\" or \"latest Honda news\".",
+                    'used_google_search' => false,
+                ]);
+            }
+
+            /*
+            * Only fetch dashboard news when the question is related to stocks/news.
+            */
+            $newsContext = 'No dashboard news context is needed for this question.';
+
+            if ($isStockQuestion || $isOnlineQuestion) {
+                $newsResponse = $this->news(new Request([
+                    'category' => 'all',
+                    'search' => '',
+                ]));
+
+                $newsData = $newsResponse->getData(true)['data'] ?? [];
+
+                $newsContext = collect($newsData)
+                    ->take(8)
+                    ->map(function ($item) {
+                        return "- Title: " . ($item['title'] ?? '-') . "\n"
+                            . "  Source: " . ($item['source_name'] ?? '-') . "\n"
+                            . "  Summary: " . ($item['description'] ?? '-') . "\n"
+                            . "  Link: " . ($item['url'] ?? '-');
+                    })
+                    ->implode("\n\n");
+
+                if ($newsContext === '') {
+                    $newsContext = 'No stock news is currently available from the dashboard.';
+                }
+            }
+
+            /*
+            * Use Google Search only for latest/current/news questions.
+            */
+            $useGoogleSearch = $isOnlineQuestion;
+
+            $answerInstruction = "
+    Answer style:
+    - If the user is chatting casually, reply naturally and briefly.
+    - If the user asks about personal MBTI, salary, risk profile, or investment strategy, use the Personal Strategy Format.
+    - If the user asks about a stock, company news, buy/sell/wait/hold, or market movement, use the Stock Analysis Format.
+    - Do not force stock analysis for casual messages.
+
+    Personal Strategy Format:
+    Profile Summary: 1 short sentence.
+    Suggested Strategy: 1 to 3 simple sentences.
+    Risk Reminder: 1 short risk reminder.
+    MBTI Tip: 1 short sentence.
+    Salary Risk: 1 short sentence.
+    Note: Investment involves risk. Please make your own decision carefully.
+
+    Stock Analysis Format:
+    Signal: Buy / Hold / Wait / Avoid / Sell
+    Reason: 1 to 3 simple sentences.
+    Risk: 1 short risk.
+    MBTI Tip: 1 short sentence if relevant.
+    Salary Risk: 1 short sentence if Premium user.
+    Sources: Provide relevant links if available.
+    Note: Investment involves risk. Please make your own decision carefully.
+    ";
 
             $prompt = "
     You are MarketLens, a stock market dashboard assistant.
@@ -451,14 +594,7 @@ class StockDashboardController extends Controller
     - If Premium User is No, mention that salary-based analysis is available for Premium users.
     - Do not make decisions only based on MBTI or salary.
 
-    Answer format:
-    Signal: Buy / Hold / Wait / Avoid / Sell
-    Reason: 1 to 3 simple sentences.
-    Risk: 1 short risk.
-    MBTI Tip: 1 short sentence.
-    Salary Risk: 1 short sentence.
-    Sources: Provide relevant links if available.
-    Note: Investment involves risk. Please make your own decision carefully.
+    {$answerInstruction}
 
     Dashboard news context:
     {$newsContext}
@@ -478,7 +614,7 @@ class StockDashboardController extends Controller
                     ],
                 ],
                 'generationConfig' => [
-                    'temperature' => 0.4,
+                    'temperature' => 0.5,
                     'maxOutputTokens' => 700,
                 ],
             ];
@@ -503,53 +639,59 @@ class StockDashboardController extends Controller
                     $requestBody
                 );
 
-            /*
-            * 404 means model or URL is wrong.
-            */
             if ($response->status() === 404) {
                 return response()->json([
                     'success' => true,
                     'reply' => "
     Signal: Wait
 
-    Reason: The Gemini model or API endpoint is currently not found. Please check GEMINI_MODEL and GEMINI_BASE_URL in your .env file.
+    Reason:
+    The Gemini model or API endpoint is not found. Please check GEMINI_MODEL and GEMINI_BASE_URL in your .env file.
 
-    Risk: Online AI analysis is unavailable until the model setting is fixed.
+    Risk:
+    Online AI analysis is unavailable until the model setting is fixed.
 
-    MBTI Tip: {$mbtiAdviceStyle}
+    MBTI Tip:
+    {$mbtiAdviceStyle}
 
-    Salary Risk: {$salaryRiskProfile}
+    Salary Risk:
+    {$salaryRiskProfile}
 
-    Sources: Online search is unavailable due to API model configuration.
+    Sources:
+    Online search is unavailable due to API model configuration.
 
-    Note: Investment involves risk. Please make your own decision carefully.
+    Note:
+    Investment involves risk. Please make your own decision carefully.
     ",
+                    'used_google_search' => $useGoogleSearch,
                 ]);
             }
 
-            /*
-            * 429 = quota / rate limit.
-            * 503 = Gemini service busy / temporarily unavailable.
-            * For school project demo, return fallback instead of showing error.
-            */
             if ($response->status() === 429 || $response->status() === 503) {
                 return response()->json([
                     'success' => true,
                     'reply' => "
     Signal: Wait
 
-    Reason: Online AI analysis is temporarily unavailable because the API quota limit was reached or the AI service is busy. Based on your profile, use a cautious strategy and avoid making decisions from one news headline only.
+    Reason:
+    Online AI analysis is temporarily unavailable because the API quota limit was reached or the AI service is busy.
 
-    Risk: Stock prices can move quickly and losses are possible.
+    Risk:
+    Do not make investment decisions based on incomplete online information.
 
-    MBTI Tip: {$mbtiAdviceStyle}
+    MBTI Tip:
+    {$mbtiAdviceStyle}
 
-    Salary Risk: {$salaryRiskProfile}
+    Salary Risk:
+    {$salaryRiskProfile}
 
-    Sources: Online search is temporarily unavailable.
+    Sources:
+    Online search is temporarily unavailable.
 
-    Note: Investment involves risk. Please make your own decision carefully.
+    Note:
+    Investment involves risk. Please make your own decision carefully.
     ",
+                    'used_google_search' => $useGoogleSearch,
                 ]);
             }
 
@@ -567,10 +709,6 @@ class StockDashboardController extends Controller
             $answer = $data['candidates'][0]['content']['parts'][0]['text']
                 ?? 'Sorry, I cannot generate an answer right now.';
 
-            /*
-            * If Google Search grounding returns sources,
-            * append source links safely.
-            */
             $groundingChunks = $data['candidates'][0]['groundingMetadata']['groundingChunks'] ?? [];
 
             $sourceLinks = collect($groundingChunks)

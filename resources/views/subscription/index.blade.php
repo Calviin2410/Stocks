@@ -137,7 +137,7 @@
     </div>
 
     <button id="chatbotOpenBtn" class="chatbot-open-btn show">
-        Stock Assistant
+        MarketLens Assistant
     </button>
 
     <div id="chatbotBox" class="chatbot-box hide">
