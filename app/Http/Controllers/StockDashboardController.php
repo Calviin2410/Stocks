@@ -356,6 +356,10 @@ class StockDashboardController extends Controller
                 ? $this->getSalaryRiskProfile($salary)
                 : 'Salary-based risk analysis is only available for Premium users.';
 
+            /*
+            * Dashboard news context.
+            * This gives Gemini your existing dashboard news first.
+            */
             $newsResponse = $this->news(new Request([
                 'category' => 'all',
                 'search' => '',
@@ -377,13 +381,44 @@ class StockDashboardController extends Controller
                 $newsContext = 'No stock news is currently available from the dashboard.';
             }
 
+            /*
+            * Only use Google Search for online/current/latest/news questions.
+            * This saves Gemini quota.
+            */
+            $lowerQuestion = strtolower($question);
+
+            $googleSearchKeywords = [
+                'latest',
+                'today',
+                'current',
+                'recent',
+                'online',
+                'news',
+                'breaking',
+                'earnings',
+                'announcement',
+                'honda',
+                'toyota',
+                'microsoft',
+                'google',
+                'amazon',
+                'meta',
+                'bitcoin',
+                'crypto',
+            ];
+
+            $useGoogleSearch = collect($googleSearchKeywords)
+                ->contains(function ($keyword) use ($lowerQuestion) {
+                    return str_contains($lowerQuestion, $keyword);
+                });
+
             $prompt = "
     You are MarketLens, a stock market dashboard assistant.
 
-    Rules:
+    Main rules:
     - Answer in simple English.
     - Use dashboard news context when it is relevant.
-    - If the user asks about a company, stock, or news that is not in the dashboard context, use Google Search if available.
+    - If the user asks about latest, current, recent, online, or company-specific news that is not in the dashboard context, use Google Search if available.
     - Include relevant source links when online information is used.
     - You may give a simple educational signal: Buy, Hold, Wait, Avoid, or Sell.
     - Do not say the user must buy or must sell.
@@ -442,12 +477,21 @@ class StockDashboardController extends Controller
                         ],
                     ],
                 ],
-                'tools' => [
+                'generationConfig' => [
+                    'temperature' => 0.4,
+                    'maxOutputTokens' => 700,
+                ],
+            ];
+
+            if ($useGoogleSearch) {
+                $requestBody['tools'] = [
                     [
                         'google_search' => (object) [],
                     ],
-                ],
-            ];
+                ];
+            }
+
+            $geminiModel = config('services.gemini.model', 'gemini-3.5-flash');
 
             $response = Http::timeout(40)
                 ->acceptJson()
@@ -455,9 +499,59 @@ class StockDashboardController extends Controller
                     'x-goog-api-key' => config('services.gemini.key'),
                 ])
                 ->post(
-                    config('services.gemini.base_url') . '/models/gemini-1.5-flash:generateContent',
+                    rtrim(config('services.gemini.base_url'), '/') . "/models/{$geminiModel}:generateContent",
                     $requestBody
                 );
+
+            /*
+            * 404 means model or URL is wrong.
+            */
+            if ($response->status() === 404) {
+                return response()->json([
+                    'success' => true,
+                    'reply' => "
+    Signal: Wait
+
+    Reason: The Gemini model or API endpoint is currently not found. Please check GEMINI_MODEL and GEMINI_BASE_URL in your .env file.
+
+    Risk: Online AI analysis is unavailable until the model setting is fixed.
+
+    MBTI Tip: {$mbtiAdviceStyle}
+
+    Salary Risk: {$salaryRiskProfile}
+
+    Sources: Online search is unavailable due to API model configuration.
+
+    Note: Investment involves risk. Please make your own decision carefully.
+    ",
+                ]);
+            }
+
+            /*
+            * 429 = quota / rate limit.
+            * 503 = Gemini service busy / temporarily unavailable.
+            * For school project demo, return fallback instead of showing error.
+            */
+            if ($response->status() === 429 || $response->status() === 503) {
+                return response()->json([
+                    'success' => true,
+                    'reply' => "
+    Signal: Wait
+
+    Reason: Online AI analysis is temporarily unavailable because the API quota limit was reached or the AI service is busy. Based on your profile, use a cautious strategy and avoid making decisions from one news headline only.
+
+    Risk: Stock prices can move quickly and losses are possible.
+
+    MBTI Tip: {$mbtiAdviceStyle}
+
+    Salary Risk: {$salaryRiskProfile}
+
+    Sources: Online search is temporarily unavailable.
+
+    Note: Investment involves risk. Please make your own decision carefully.
+    ",
+                ]);
+            }
 
             if ($response->failed()) {
                 return response()->json([
@@ -473,9 +567,39 @@ class StockDashboardController extends Controller
             $answer = $data['candidates'][0]['content']['parts'][0]['text']
                 ?? 'Sorry, I cannot generate an answer right now.';
 
+            /*
+            * If Google Search grounding returns sources,
+            * append source links safely.
+            */
+            $groundingChunks = $data['candidates'][0]['groundingMetadata']['groundingChunks'] ?? [];
+
+            $sourceLinks = collect($groundingChunks)
+                ->map(function ($chunk) {
+                    $web = $chunk['web'] ?? null;
+
+                    if (!$web || empty($web['uri'])) {
+                        return null;
+                    }
+
+                    $title = $web['title'] ?? 'Source';
+                    $uri = $web['uri'];
+
+                    return "- {$title}: {$uri}";
+                })
+                ->filter()
+                ->unique()
+                ->take(5)
+                ->values()
+                ->implode("\n");
+
+            if ($sourceLinks !== '' && !str_contains(strtolower($answer), 'sources:')) {
+                $answer .= "\n\nSources:\n" . $sourceLinks;
+            }
+
             return response()->json([
                 'success' => true,
                 'reply' => $answer,
+                'used_google_search' => $useGoogleSearch,
             ]);
         } catch (\Throwable $e) {
             return response()->json([

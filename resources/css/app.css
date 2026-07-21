@@ -1874,3 +1874,9 @@
         .navbar-brand:hover .navbar-slogan {
             color: #d1d5db;
         }
+
+        .bot-message,
+            .user-message {
+                white-space: pre-line;
+                line-height: 1.5;
+            }
