@@ -1880,3 +1880,16 @@
                 white-space: pre-line;
                 line-height: 1.5;
             }
+
+
+        .bot-message a {
+            display: inline-block;
+            margin-top: 6px !important;
+            color: #2563eb;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .bot-message a:hover {
+            text-decoration: underline;
+        }

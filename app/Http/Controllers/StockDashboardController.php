@@ -639,61 +639,70 @@ class StockDashboardController extends Controller
                     $requestBody
                 );
 
-            if ($response->status() === 404) {
-                return response()->json([
-                    'success' => true,
-                    'reply' => "
-    Signal: Wait
+        if ($response->status() === 404) {
+            return response()->json([
+                'success' => true,
+                'reply' => trim("
+        I’m unable to connect to the AI model right now.
 
-    Reason:
-    The Gemini model or API endpoint is not found. Please check GEMINI_MODEL and GEMINI_BASE_URL in your .env file.
+        Please check the Gemini model setting in the system configuration.
 
-    Risk:
-    Online AI analysis is unavailable until the model setting is fixed.
+        Note:
+        Investment involves risk. Please make your own decision carefully.
+        "),
+                'used_google_search' => $useGoogleSearch,
+            ]);
+        }
 
-    MBTI Tip:
-    {$mbtiAdviceStyle}
+        if ($response->status() === 429 || $response->status() === 503) {
+            if ($isOnlineQuestion) {
+                $rssNews = $this->fetchGoogleNewsRss($question);
 
-    Salary Risk:
-    {$salaryRiskProfile}
+                if (!empty($rssNews)) {
+                    $newsList = collect($rssNews)
+                        ->take(5)
+                        ->map(function ($item, $index) {
+                            $number = $index + 1;
 
-    Sources:
-    Online search is unavailable due to API model configuration.
+                            $title = e($item['title']);
+                            $source = e($item['source']);
+                            $link = e($item['link']);
 
-    Note:
-    Investment involves risk. Please make your own decision carefully.
-    ",
-                    'used_google_search' => $useGoogleSearch,
-                ]);
+                            return "{$number}. {$title}\n"
+                                . "Source: {$source}\n"
+                                . "<a href=\"{$link}\" target=\"_blank\" rel=\"noopener noreferrer\">Open article</a>";
+                        })
+                        ->implode("\n\n");
+
+                    return response()->json([
+                        'success' => true,
+                        'reply' => trim("
+        Here are some related news articles I found:
+
+        {$newsList}
+
+        Note:
+        Investment involves risk. Please make your own decision carefully.
+        "),
+                        'used_google_search' => false,
+                        'fallback_source' => 'google_news_rss',
+                    ]);
+                }
             }
 
-            if ($response->status() === 429 || $response->status() === 503) {
-                return response()->json([
-                    'success' => true,
-                    'reply' => "
-    Signal: Wait
+            return response()->json([
+                'success' => true,
+                'reply' => trim("
+        I’m unable to retrieve online AI analysis right now.
 
-    Reason:
-    Online AI analysis is temporarily unavailable because the API quota limit was reached or the AI service is busy.
+        You can still ask me about your MBTI investment style or Premium salary-based risk profile.
 
-    Risk:
-    Do not make investment decisions based on incomplete online information.
-
-    MBTI Tip:
-    {$mbtiAdviceStyle}
-
-    Salary Risk:
-    {$salaryRiskProfile}
-
-    Sources:
-    Online search is temporarily unavailable.
-
-    Note:
-    Investment involves risk. Please make your own decision carefully.
-    ",
-                    'used_google_search' => $useGoogleSearch,
-                ]);
-            }
+        Note:
+        Investment involves risk. Please make your own decision carefully.
+        "),
+                'used_google_search' => $useGoogleSearch,
+            ]);
+        }
 
             if ($response->failed()) {
                 return response()->json([
@@ -980,5 +989,70 @@ class StockDashboardController extends Controller
         }
 
         return 'The user may have higher income flexibility. Suggest more flexible growth-oriented strategies, but warn against overconfidence and large single-stock concentration.';
+    }
+
+    private function fetchGoogleNewsRss(string $question): array
+    {
+        try {
+            $query = strtolower(trim($question));
+
+            $query = str_replace([
+                'give me',
+                'any news about',
+                'news about',
+                'latest news',
+                'latest',
+                'current',
+                'today',
+                'recent',
+                'online',
+                'hi',
+                'hello',
+                'please',
+            ], '', $query);
+
+            $query = trim($query);
+
+            if ($query === '') {
+                $query = 'stock market news';
+            }
+
+            $rssUrl = 'https://news.google.com/rss/search?q='
+                . urlencode($query . ' stock news')
+                . '&hl=en-MY&gl=MY&ceid=MY:en';
+
+            $response = Http::timeout(15)
+                ->withHeaders([
+                    'User-Agent' => 'Mozilla/5.0',
+                ])
+                ->get($rssUrl);
+
+            if ($response->failed()) {
+                return [];
+            }
+
+            $xml = simplexml_load_string($response->body());
+
+            if (!$xml || !isset($xml->channel->item)) {
+                return [];
+            }
+
+            $items = [];
+
+            foreach ($xml->channel->item as $item) {
+                $items[] = [
+                    'title' => html_entity_decode((string) $item->title),
+                    'link' => (string) $item->link,
+                    'source' => isset($item->source)
+                        ? (string) $item->source
+                        : 'Google News',
+                    'published_at' => (string) $item->pubDate,
+                ];
+            }
+
+            return $items;
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 }

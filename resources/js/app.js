@@ -167,7 +167,11 @@ import Chart from 'chart.js/auto';
 
             const messageDiv = document.createElement('div');
             messageDiv.className = type === 'user' ? 'user-message' : 'bot-message';
-            messageDiv.textContent = message;
+            if (type === 'bot') {
+                messageDiv.innerHTML = message.trim();
+            } else {
+                messageDiv.textContent = message.trim();
+            }
 
             chatbotMessages.appendChild(messageDiv);
             chatbotMessages.scrollTop = chatbotMessages.scrollHeight;

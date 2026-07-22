@@ -147,9 +147,7 @@
         </div>
 
         <div id="chatbotMessages" class="chatbot-messages">
-            <div class="bot-message">
-                Hi, ask me about the latest stock news.
-            </div>
+            <div class="bot-message">Hi, I’m your MarketLens assistant. Ask me about market news, stock strategy, or your personal investment profile.</div>
         </div>
 
         <div class="chatbot-input-row">
