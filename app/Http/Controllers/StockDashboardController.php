@@ -498,6 +498,71 @@ class StockDashboardController extends Controller
             }
 
             /*
+            * Normal news analysis.
+            * This uses Google News RSS + Laravel rule-based signal.
+            * It does NOT call Gemini, so it does not use Gemini token or quota.
+            */
+            if ($isOnlineQuestion) {
+                $rssNews = $this->fetchGoogleNewsRss($question);
+
+                if (!empty($rssNews)) {
+                    $signalData = $this->getNewsBasedSignal($rssNews);
+
+                    $newsList = collect($rssNews)
+                        ->take(5)
+                        ->map(function ($item, $index) {
+                            $number = $index + 1;
+
+                            $title = e($item['title']);
+                            $source = e($item['source']);
+                            $link = e($item['link']);
+
+                            return "{$number}. {$title}\n"
+                                . "Source: {$source}\n"
+                                . "<a href=\"{$link}\" target=\"_blank\" rel=\"noopener noreferrer\">Open article</a>";
+                        })
+                        ->implode("\n\n");
+
+                    return response()->json([
+                        'success' => true,
+                        'reply' => trim("
+            Signal:
+            {$signalData['signal']}
+
+            Suggested Action:
+            {$signalData['action']}
+
+            Reason:
+            {$signalData['reason']}
+
+            Related News:
+            {$newsList}
+
+            Note:
+            Investment involves risk. Please make your own decision carefully.
+            "),
+                        'used_google_search' => false,
+                        'source' => 'google_news_rss_rule_based',
+                    ]);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'reply' => trim("
+            Signal:
+            Wait
+
+            Suggested Action:
+            I could not find enough related news right now. Wait for clearer information before making a decision.
+
+            Note:
+            Investment involves risk. Please make your own decision carefully.
+            "),
+                    'used_google_search' => false,
+                    'source' => 'google_news_rss_rule_based',
+                ]);
+            }
+            /*
             * Only fetch dashboard news when the question is related to stocks/news.
             */
             $newsContext = 'No dashboard news context is needed for this question.';
@@ -528,32 +593,35 @@ class StockDashboardController extends Controller
             /*
             * Use Google Search only for latest/current/news questions.
             */
-            $useGoogleSearch = $isOnlineQuestion;
+            $useGoogleSearch = false;
 
-            $answerInstruction = "
-    Answer style:
-    - If the user is chatting casually, reply naturally and briefly.
-    - If the user asks about personal MBTI, salary, risk profile, or investment strategy, use the Personal Strategy Format.
-    - If the user asks about a stock, company news, buy/sell/wait/hold, or market movement, use the Stock Analysis Format.
-    - Do not force stock analysis for casual messages.
+                    
+        $answerInstruction = <<<'TEXT'
+        Answer style:
+        - If the user is chatting casually, reply naturally and briefly.
+        - If the user asks about personal MBTI, salary, risk profile, or investment strategy, use the Personal Strategy Format.
+        - If the user asks about a stock, company news, buy, sell, wait, hold, or market movement, use the Stock Analysis Format.
+        - Do not force stock analysis for casual messages.
 
-    Personal Strategy Format:
-    Profile Summary: 1 short sentence.
-    Suggested Strategy: 1 to 3 simple sentences.
-    Risk Reminder: 1 short risk reminder.
-    MBTI Tip: 1 short sentence.
-    Salary Risk: 1 short sentence.
-    Note: Investment involves risk. Please make your own decision carefully.
+        Personal Strategy Format:
+        Profile Summary: 1 short sentence.
+        Suggested Strategy: 1 to 3 simple sentences.
+        Risk Reminder: 1 short risk reminder.
+        MBTI Tip: 1 short sentence.
+        Salary Risk: 1 short sentence.
+        Note: Investment involves risk. Please make your own decision carefully.
 
-    Stock Analysis Format:
-    Signal: Buy / Hold / Wait / Avoid / Sell
-    Reason: 1 to 3 simple sentences.
-    Risk: 1 short risk.
-    MBTI Tip: 1 short sentence if relevant.
-    Salary Risk: 1 short sentence if Premium user.
-    Sources: Provide relevant links if available.
-    Note: Investment involves risk. Please make your own decision carefully.
-    ";
+        Stock Analysis Format:
+        Signal: Buy / Hold / Wait / Avoid / Sell
+        Suggested Action: Give a simple educational action, such as consider buying slowly, hold existing position, wait for confirmation, or avoid for now.
+        Reason: 1 to 3 simple sentences.
+        Risk: 1 short risk.
+        Position Reminder: If Premium user, suggest a cautious position size based on salary risk. Do not suggest using a large part of salary.
+        MBTI Tip: 1 short sentence if relevant.
+        Salary Risk: 1 short sentence if Premium user.
+        Sources: Provide relevant links if available.
+        Note: Investment involves risk. Please make your own decision carefully.
+        TEXT;
 
             $prompt = "
     You are MarketLens, a stock market dashboard assistant.
@@ -659,6 +727,8 @@ class StockDashboardController extends Controller
                 $rssNews = $this->fetchGoogleNewsRss($question);
 
                 if (!empty($rssNews)) {
+                    $signalData = $this->getNewsBasedSignal($rssNews);
+
                     $newsList = collect($rssNews)
                         ->take(5)
                         ->map(function ($item, $index) {
@@ -677,13 +747,18 @@ class StockDashboardController extends Controller
                     return response()->json([
                         'success' => true,
                         'reply' => trim("
-        Here are some related news articles I found:
+                        Signal:
+                        {$signalData['signal']}
 
-        {$newsList}
+                        Suggested Action:
+                        {$signalData['action']}
 
-        Note:
-        Investment involves risk. Please make your own decision carefully.
-        "),
+                        Related News:
+                        {$newsList}
+
+                        Note:
+                        Investment involves risk. Please make your own decision carefully.
+                    "),
                         'used_google_search' => false,
                         'fallback_source' => 'google_news_rss',
                     ]);
@@ -1054,5 +1129,93 @@ class StockDashboardController extends Controller
         } catch (\Throwable $e) {
             return [];
         }
+    }
+
+    private function getNewsBasedSignal(array $newsItems): array
+    {
+        $titles = collect($newsItems)
+            ->pluck('title')
+            ->implode(' ');
+
+        $text = strtolower($titles);
+
+        $negativeWords = [
+            'falls',
+            'fall',
+            'drops',
+            'drop',
+            'dips',
+            'dip',
+            'loss',
+            'losses',
+            'weak',
+            'slump',
+            'lower',
+            'down',
+            'concern',
+            'risk',
+            'miss',
+            'soft quarter',
+            'retreat',
+            'decline',
+            'pressure',
+            'cuts',
+            'cut',
+        ];
+
+        $positiveWords = [
+            'rises',
+            'rise',
+            'gains',
+            'gain',
+            'up',
+            'higher',
+            'profit',
+            'growth',
+            'strong',
+            'beats',
+            'record',
+            'surge',
+            'positive',
+            'upgrade',
+            'expands',
+            'rebound',
+            'improves',
+            'boost',
+        ];
+
+        $negativeScore = collect($negativeWords)
+            ->filter(function ($word) use ($text) {
+                return str_contains($text, $word);
+            })
+            ->count();
+
+        $positiveScore = collect($positiveWords)
+            ->filter(function ($word) use ($text) {
+                return str_contains($text, $word);
+            })
+            ->count();
+
+        if ($negativeScore > $positiveScore) {
+            return [
+                'signal' => 'Wait',
+                'action' => 'Do not buy immediately. Wait for clearer confirmation because the recent news tone looks cautious.',
+                'reason' => 'The related headlines contain more negative words such as drop, dip, loss, weak, or concern.',
+            ];
+        }
+
+        if ($positiveScore > $negativeScore) {
+            return [
+                'signal' => 'Hold',
+                'action' => 'The news tone looks slightly positive, but check the company fundamentals before buying.',
+                'reason' => 'The related headlines contain more positive words such as growth, profit, rise, strong, or upgrade.',
+            ];
+        }
+
+        return [
+            'signal' => 'Wait',
+            'action' => 'The news tone is mixed or unclear. Wait for more confirmation before making a decision.',
+            'reason' => 'The related headlines do not show a clearly positive or negative direction.',
+        ];
     }
 }
